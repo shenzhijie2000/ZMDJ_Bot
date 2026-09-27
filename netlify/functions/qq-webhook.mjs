@@ -20,8 +20,14 @@ function normalize(value) {
   return String(value ?? "").trim().toLocaleLowerCase("zh-CN");
 }
 
-function search(keyword) {
+export function search(keyword) {
   const key = normalize(keyword);
+  const leadingToken = key.split(/\s+/, 1)[0];
+  const serialMatches = cards.filter(
+    (card) => normalize(card.serial_number) === leadingToken,
+  );
+  if (serialMatches.length > 0) return serialMatches;
+
   return cards.filter((card) =>
     normalize(card.name).includes(key) || normalize(card.serial_number).includes(key)
   );
@@ -100,8 +106,15 @@ async function qqRequest(url, method, body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!response.ok) throw new Error(`QQ API 请求失败：${response.status} ${await response.text()}`);
-  return response.json();
+  const responseText = await response.text();
+  let result = null;
+  try { result = responseText ? JSON.parse(responseText) : null; } catch { result = null; }
+
+  // QQ retries webhook events. If the first invocation already replied with the
+  // same msg_id/msg_seq, the retry returns 40054005. That is an idempotent success.
+  if (!response.ok && result?.code === 40054005) return result;
+  if (!response.ok) throw new Error(`QQ API 请求失败：${response.status} ${responseText}`);
+  return result;
 }
 
 async function sendText(groupOpenid, content, msgId) {
@@ -109,6 +122,7 @@ async function sendText(groupOpenid, content, msgId) {
     content,
     msg_type: 0,
     msg_id: msgId,
+    msg_seq: 1,
   });
 }
 
@@ -120,6 +134,7 @@ async function sendImage(groupOpenid, imageUrl, msgId) {
   return qqRequest(`/v2/groups/${encodeURIComponent(groupOpenid)}/messages`, "POST", {
     msg_type: 7,
     msg_id: msgId,
+    msg_seq: 1,
     media: { file_info: uploaded.file_info },
   });
 }
