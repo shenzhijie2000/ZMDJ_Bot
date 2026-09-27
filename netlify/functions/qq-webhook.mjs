@@ -125,9 +125,11 @@ async function sendImage(groupOpenid, imageUrl, msgId) {
 }
 
 function listMessage(matches) {
-  const names = [...new Set(matches.map((card) => card.name))].slice(0, 10);
+  const names = matches
+    .slice(0, 10)
+    .map((card) => `${card.serial_number} ${card.name}`);
   const suffix = matches.length > 10 ? "\n……（结果过多，请输入更完整的卡名）" : "";
-  return `查询到以下 ${matches.length} 张卡牌：\n${names.join("\n")}${suffix}\n\n查询全名查看卡图。`;
+  return `查询到以下 ${matches.length} 张卡牌：\n${names.join("\n")}${suffix}\n\n输入完整卡号查看卡图。`;
 }
 
 export default async (request) => {

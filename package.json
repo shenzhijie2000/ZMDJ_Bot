@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node test-signature.mjs"
+    "test": "node test-signature.mjs && node test-search-output.mjs"
   },
   "engines": {
     "node": ">=18"
