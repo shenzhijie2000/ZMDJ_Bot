@@ -134,9 +134,18 @@ export default async (request) => {
   try { data = JSON.parse(rawBody); } catch { return json(400, { error: "Invalid JSON" }); }
 
   // QQ callback URL verification (OP 13) is intentionally handled before normal events.
-  if (data.op === 13) {
+  if (Number(data.op) === 13) {
     const verification = callbackValidation(data);
-    return verification ? json(200, verification) : json(400, { error: "Invalid verification payload" });
+    if (!verification) return json(400, { error: "Invalid verification payload" });
+
+    // QQ requires this exact JSON object for the callback URL challenge.
+    return new Response(JSON.stringify({
+      plain_token: verification.plain_token,
+      signature: verification.signature,
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const headers = Object.fromEntries(request.headers.entries());
