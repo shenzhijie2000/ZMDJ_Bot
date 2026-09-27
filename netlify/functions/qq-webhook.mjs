@@ -50,9 +50,11 @@ function callbackValidation(data) {
   const plainToken = data?.d?.plain_token;
   const eventTs = data?.d?.event_ts;
   if (!plainToken || !eventTs) return null;
+  // QQ's OP 13 verification signature is SHA256(plain_token + event_ts + AppSecret).
+  // It is not an HMAC.
   const signature = crypto
-    .createHmac("sha256", process.env.QQ_CLIENT_SECRET)
-    .update(plainToken + eventTs)
+    .createHash("sha256")
+    .update(plainToken + eventTs + process.env.QQ_CLIENT_SECRET)
     .digest("hex");
   return { plain_token: plainToken, signature };
 }
