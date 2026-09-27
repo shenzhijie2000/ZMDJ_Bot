@@ -20,6 +20,13 @@ function normalize(value) {
   return String(value ?? "").trim().toLocaleLowerCase("zh-CN");
 }
 
+export function parseQuery(value) {
+  const content = String(value ?? "").trim();
+  const showAll = /(^|\s)-a(?=\s|$)/i.test(content);
+  const keyword = content.replace(/(^|\s)-a(?=\s|$)/gi, " ").trim();
+  return { keyword, showAll };
+}
+
 export function search(keyword) {
   const key = normalize(keyword);
   const leadingToken = key.split(/\s+/, 1)[0];
@@ -117,16 +124,16 @@ async function qqRequest(url, method, body) {
   return result;
 }
 
-async function sendText(groupOpenid, content, msgId) {
+async function sendText(groupOpenid, content, msgId, msgSeq = 1) {
   return qqRequest(`/v2/groups/${encodeURIComponent(groupOpenid)}/messages`, "POST", {
     content,
     msg_type: 0,
     msg_id: msgId,
-    msg_seq: 1,
+    msg_seq: msgSeq,
   });
 }
 
-async function sendImage(groupOpenid, imageUrl, msgId) {
+async function sendImage(groupOpenid, imageUrl, msgId, msgSeq = 1) {
   const uploaded = await qqRequest(`/v2/groups/${encodeURIComponent(groupOpenid)}/files`, "POST", {
     file_type: 1,
     url: imageUrl,
@@ -134,9 +141,19 @@ async function sendImage(groupOpenid, imageUrl, msgId) {
   return qqRequest(`/v2/groups/${encodeURIComponent(groupOpenid)}/messages`, "POST", {
     msg_type: 7,
     msg_id: msgId,
-    msg_seq: 1,
+    msg_seq: msgSeq,
     media: { file_info: uploaded.file_info },
   });
+}
+
+async function sendAllImages(groupOpenid, matches, msgId) {
+  // Upload and send concurrently so a multi-card query can finish within the
+  // serverless execution window. msg_seq keeps every reply unique.
+  await Promise.all(
+    matches.map((card, index) =>
+      sendImage(groupOpenid, card.img_hd_url, msgId, index + 1),
+    ),
+  );
 }
 
 function listMessage(matches) {
@@ -175,15 +192,22 @@ export default async (request) => {
   if (data.op !== 0 || data.t !== "GROUP_AT_MESSAGE_CREATE") return json(200, { op: 12, d: 0 });
   const event = data.d;
   // Some deliveries include the bot mention in content; strip it when present.
-  const keyword = String(event.content ?? "").replace(/^\s*<@!?[^>]+>\s*/, "").trim();
+  const content = String(event.content ?? "").replace(/^\s*<@!?[^>]+>\s*/, "").trim();
+  const { keyword, showAll } = parseQuery(content);
   if (!keyword) {
-    await sendText(event.group_openid, "我是正面卡查。@我后直接输入卡名即可，例如：@正面卡查 关银屏", event.id);
+    await sendText(
+      event.group_openid,
+      "我是正面卡查。直接输入卡名即可；加 -a 会发送全部匹配卡图。\n例如：@正面卡查 关银屏\n@正面卡查 -a 关银屏",
+      event.id,
+    );
     return json(200, { op: 12, d: 0 });
   }
 
   const matches = search(keyword);
   if (matches.length === 0) {
     await sendText(event.group_openid, `未找到“${keyword}”相关卡牌。`, event.id);
+  } else if (showAll) {
+    await sendAllImages(event.group_openid, matches, event.id);
   } else {
     const exact = exactMatch(keyword, matches);
     if (exact.length === 1) {

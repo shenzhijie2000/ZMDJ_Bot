@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { search } from "./netlify/functions/qq-webhook.mjs";
+import { parseQuery, search } from "./netlify/functions/qq-webhook.mjs";
 
 function listMessage(matches) {
   const names = matches
@@ -30,3 +30,9 @@ const copiedListLine = search("BP01-SR-053 将门虎女·关银屏");
 assert.equal(copiedListLine.length, 1);
 assert.equal(copiedListLine[0].serial_number, "BP01-SR-053");
 console.log("PASS: serial-only and copied list-line queries resolve to one card");
+
+assert.deepEqual(parseQuery("-a 关银屏"), { keyword: "关银屏", showAll: true });
+assert.deepEqual(parseQuery("关银屏 -a"), { keyword: "关银屏", showAll: true });
+assert.deepEqual(parseQuery("关银屏"), { keyword: "关银屏", showAll: false });
+assert.deepEqual(parseQuery("-a"), { keyword: "", showAll: true });
+console.log("PASS: -a enables all-image mode before or after the keyword");
