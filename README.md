@@ -10,7 +10,7 @@
 
 1. 将 `Z_BP01.json` 放入 `data/Z_BP01.json`。
 2. 在 Netlify 导入此目录；Build command 留空，Publish directory 留空。
-3. 在 Netlify 的 **Site configuration → Environment variables** 添加 `.env.example` 中的三个变量。
+3. 在 Netlify 的 **Site configuration → Environment variables** 添加 `.env.example` 中的两个变量。`QQ_CLIENT_SECRET` 对应 QQ 后台的 AppSecret，并勾选 Secret。
 4. 部署后，把回调地址填入 QQ 机器人后台：
    `https://你的站点.netlify.app/.netlify/functions/qq-webhook`
 5. 在 QQ 后台订阅 `GROUP_AT_MESSAGE_CREATE`。

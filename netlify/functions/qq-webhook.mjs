@@ -32,44 +32,47 @@ function exactMatch(keyword, matches) {
   return matches.filter((card) => normalize(card.name) === key || normalize(card.serial_number) === key);
 }
 
-// QQ sends the Ed25519 public key as a 32-byte hexadecimal value in the bot dashboard.
-function verifyQqSignature(headers, rawBody) {
-  const signature = headers["x-signature"];
-  const timestamp = headers["x-signature-timestamp"];
-  const publicKeyHex = process.env.QQ_PUBLIC_KEY;
-  if (!signature || !timestamp || !publicKeyHex) return false;
+function secretSeed(secret) {
+  if (!secret) throw new Error("QQ_CLIENT_SECRET is missing");
+  let seed = Buffer.from(secret, "utf8");
+  while (seed.length < 32) seed = Buffer.concat([seed, seed]);
+  return seed.subarray(0, 32);
+}
 
-  const rawKey = Buffer.from(publicKeyHex, "hex");
-  if (rawKey.length !== 32) return false;
-  // ASN.1 SubjectPublicKeyInfo prefix required by Node's crypto.verify().
-  const spki = Buffer.concat([Buffer.from("302a300506032b6570032100", "hex"), rawKey]);
-  const publicKey = crypto.createPublicKey({ key: spki, format: "der", type: "spki" });
-  return crypto.verify(null, Buffer.from(timestamp + rawBody), publicKey, Buffer.from(signature, "hex"));
+function qqSigningKeys(secret) {
+  // PKCS#8 prefix for an Ed25519 private key whose final 32 bytes are the seed.
+  const privateDer = Buffer.concat([
+    Buffer.from("302e020100300506032b657004220420", "hex"),
+    secretSeed(secret),
+  ]);
+  const privateKey = crypto.createPrivateKey({ key: privateDer, format: "der", type: "pkcs8" });
+  return { privateKey, publicKey: crypto.createPublicKey(privateKey) };
+}
+
+function verifyQqSignature(headers, rawBody) {
+  const signature = headers["x-signature-ed25519"];
+  const timestamp = headers["x-signature-timestamp"];
+  const secret = process.env.QQ_CLIENT_SECRET;
+  if (!signature || !timestamp || !secret) return false;
+  const { publicKey } = qqSigningKeys(secret);
+  return crypto.verify(
+    null,
+    Buffer.from(timestamp + rawBody, "utf8"),
+    publicKey,
+    Buffer.from(signature, "hex"),
+  );
 }
 
 function callbackValidation(data) {
   const plainToken = data?.d?.plain_token;
   const eventTs = data?.d?.event_ts;
   const secret = process.env.QQ_CLIENT_SECRET;
-  if (!plainToken || !eventTs || !secret) {
-    console.error("[QQ callback validation] missing required input", {
-      hasPlainToken: Boolean(plainToken),
-      hasEventTimestamp: Boolean(eventTs),
-      hasAppSecret: Boolean(secret),
-    });
-    return null;
-  }
-  // QQ's OP 13 verification signature is SHA256(plain_token + event_ts + AppSecret).
-  // It is not an HMAC.
+  if (!plainToken || !eventTs || !secret) return null;
+  // QQ derives an Ed25519 key from AppSecret and signs event_ts + plain_token.
+  const { privateKey } = qqSigningKeys(secret);
   const signature = crypto
-    .createHash("sha256")
-    .update(plainToken + eventTs + secret)
-    .digest("hex");
-  console.info("[QQ callback validation] response generated", {
-    plainTokenLength: plainToken.length,
-    eventTimestamp: eventTs,
-    appSecretLength: secret.length,
-  });
+    .sign(null, Buffer.from(eventTs + plainToken, "utf8"), privateKey)
+    .toString("hex");
   return { plain_token: plainToken, signature };
 }
 
@@ -133,6 +136,9 @@ export default async (request) => {
   let data;
   try { data = JSON.parse(rawBody); } catch { return json(400, { error: "Invalid JSON" }); }
 
+  const headers = Object.fromEntries(request.headers.entries());
+  if (!verifyQqSignature(headers, rawBody)) return json(401, { error: "Invalid QQ signature" });
+
   // QQ callback URL verification (OP 13) is intentionally handled before normal events.
   if (Number(data.op) === 13) {
     const verification = callbackValidation(data);
@@ -147,9 +153,6 @@ export default async (request) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-
-  const headers = Object.fromEntries(request.headers.entries());
-  if (!verifyQqSignature(headers, rawBody)) return json(401, { error: "Invalid QQ signature" });
 
   // Always ACK immediately; message delivery happens through QQ's REST API.
   if (data.op !== 0 || data.t !== "GROUP_AT_MESSAGE_CREATE") return json(200, { op: 12, d: 0 });
