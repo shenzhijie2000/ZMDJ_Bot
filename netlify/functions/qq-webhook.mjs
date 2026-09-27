@@ -50,13 +50,26 @@ function verifyQqSignature(headers, rawBody) {
 function callbackValidation(data) {
   const plainToken = data?.d?.plain_token;
   const eventTs = data?.d?.event_ts;
-  if (!plainToken || !eventTs) return null;
+  const secret = process.env.QQ_CLIENT_SECRET;
+  if (!plainToken || !eventTs || !secret) {
+    console.error("[QQ callback validation] missing required input", {
+      hasPlainToken: Boolean(plainToken),
+      hasEventTimestamp: Boolean(eventTs),
+      hasAppSecret: Boolean(secret),
+    });
+    return null;
+  }
   // QQ's OP 13 verification signature is SHA256(plain_token + event_ts + AppSecret).
   // It is not an HMAC.
   const signature = crypto
     .createHash("sha256")
-    .update(plainToken + eventTs + process.env.QQ_CLIENT_SECRET)
+    .update(plainToken + eventTs + secret)
     .digest("hex");
+  console.info("[QQ callback validation] response generated", {
+    plainTokenLength: plainToken.length,
+    eventTimestamp: eventTs,
+    appSecretLength: secret.length,
+  });
   return { plain_token: plainToken, signature };
 }
 
