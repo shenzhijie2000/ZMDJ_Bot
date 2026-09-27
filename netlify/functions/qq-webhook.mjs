@@ -10,7 +10,10 @@ const ACCESS_TOKEN_URL = "https://bots.qq.com/app/getAppAccessToken";
 let tokenCache = { value: "", expiresAt: 0 };
 
 function json(statusCode, body) {
-  return { statusCode, headers: { "content-type": "application/json; charset=utf-8" }, body: JSON.stringify(body) };
+  return new Response(JSON.stringify(body), {
+    status: statusCode,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
 }
 
 function normalize(value) {
