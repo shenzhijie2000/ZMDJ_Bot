@@ -1,11 +1,9 @@
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import cardDatabase from "../../data/Z_BP01.json" with { type: "json" };
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const cardsFile = path.join(here, "..", "data", "Z_BP01.json");
-const cards = JSON.parse(fs.readFileSync(cardsFile, "utf8")).data.list;
+// Importing the JSON lets Netlify bundle it with this function instead of
+// relying on a filesystem path that does not exist in the serverless runtime.
+const cards = cardDatabase.data.list;
 
 const QQ_API = "https://api.sgroup.qq.com";
 const ACCESS_TOKEN_URL = "https://bots.qq.com/app/getAppAccessToken";
