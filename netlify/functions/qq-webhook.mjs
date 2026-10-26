@@ -1,9 +1,28 @@
 import crypto from "node:crypto";
-import cardDatabase from "../../data/Z_BP01.json" with { type: "json" };
+import box01Database from "../../data/Z_BOX01.json" with { type: "json" };
+import bp01Database from "../../data/Z_BP01.json" with { type: "json" };
+import bp02Database from "../../data/Z_BP02.json" with { type: "json" };
+import prmDatabase from "../../data/Z_PRM.json" with { type: "json" };
+import s01Database from "../../data/Z_S01.json" with { type: "json" };
+import sdDatabase from "../../data/Z_SD.json" with { type: "json" };
+import tb01Database from "../../data/Z_TB01.json" with { type: "json" };
+import wzglDatabase from "../../data/Z_WZGL.json" with { type: "json" };
 
-// Importing the JSON lets Netlify bundle it with this function instead of
-// relying on a filesystem path that does not exist in the serverless runtime.
-const cards = cardDatabase.data.list;
+// Statically importing each split file makes Netlify bundle all card data with
+// this function instead of relying on serverless runtime filesystem access.
+const cardDatabases = [
+  box01Database,
+  bp01Database,
+  bp02Database,
+  prmDatabase,
+  s01Database,
+  sdDatabase,
+  tb01Database,
+  wzglDatabase,
+];
+const cards = cardDatabases.flatMap((database) =>
+  Array.isArray(database?.data?.list) ? database.data.list : [],
+);
 
 const QQ_API = "https://api.sgroup.qq.com";
 const ACCESS_TOKEN_URL = "https://bots.qq.com/app/getAppAccessToken";

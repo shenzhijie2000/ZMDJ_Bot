@@ -1,0 +1,55 @@
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "total": 2,
+    "list": [
+      {
+        "is_forbidden": false,
+        "id": 398,
+        "name": "烈火将军·曹焱兵",
+        "serial_number": "WZGL-PR-001",
+        "pack_name": "BW线下活动PR卡",
+        "attr_war_art": 4,
+        "loyalty": "",
+        "main_cate": 1,
+        "sub_cate": "魏势力/主公",
+        "rarity": "PR",
+        "cost_value": 0,
+        "stats_might": 2,
+        "stats_range": 1,
+        "stats_flash": 0,
+        "img_thumb_url": "https://xxzmdjtcgoss.zmdjsgs.com/activity/2026/08/05/1785928582_d9phn1hnf76m2j3jd1i0.png?x-oss-process=image/resize,w_200",
+        "img_hd_url": "https://xxzmdjtcgoss.zmdjsgs.com/activity/2026/08/05/1785928582_d9phn1hnf76m2j3jd1i0.png",
+        "skill_text": "(此牌牌名视为奸雄·曹操）\n阻截（对此单位相邻的单位发起攻击后，你可以横置此单位并将本次攻击目标改为此单位）\n觉醒 山山④（【通常】山山④：将此牌翻面）",
+        "effect_humor_text": "",
+        "ambush_text": "",
+        "created_ms": 1785928314193,
+        "updated_ms": 1785930415531
+      },
+      {
+        "is_forbidden": false,
+        "id": 399,
+        "name": "烈火将军·曹焱兵",
+        "serial_number": "WZGL-PR-001*",
+        "pack_name": "BW线下活动PR卡",
+        "attr_war_art": 4,
+        "loyalty": "",
+        "main_cate": 6,
+        "sub_cate": "魏势力/主公",
+        "rarity": "PR",
+        "cost_value": 0,
+        "stats_might": 3,
+        "stats_range": 2,
+        "stats_flash": 0,
+        "img_thumb_url": "https://xxzmdjtcgoss.zmdjsgs.com/activity/2026/08/05/1785928616_d9phna1nf76m2j3jd1kg.png?x-oss-process=image/resize,w_200",
+        "img_hd_url": "https://xxzmdjtcgoss.zmdjsgs.com/activity/2026/08/05/1785928616_d9phna1nf76m2j3jd1kg.png",
+        "skill_text": "阻截（对此单位相邻的单位发起攻击后，你可以横置此单位并将本次攻击目标改为此单位）\n每当此统帅受到伤害时，摸一张牌。 此技能每回合至多使用一次。",
+        "effect_humor_text": "",
+        "ambush_text": "",
+        "created_ms": 1785928314197,
+        "updated_ms": 1785930418774
+      }
+    ]
+  }
+}

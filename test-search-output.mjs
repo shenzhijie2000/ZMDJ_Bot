@@ -31,6 +31,11 @@ assert.equal(copiedListLine.length, 1);
 assert.equal(copiedListLine[0].serial_number, "BP01-SR-053");
 console.log("PASS: serial-only and copied list-line queries resolve to one card");
 
+const bp02Card = search("BP02-L-001");
+assert.equal(bp02Card.length, 1);
+assert.equal(bp02Card[0].serial_number, "BP02-L-001");
+console.log("PASS: split BP02 data participates in card search");
+
 assert.deepEqual(parseQuery("-a 关银屏"), { keyword: "关银屏", showAll: true });
 assert.deepEqual(parseQuery("关银屏 -a"), { keyword: "关银屏", showAll: true });
 assert.deepEqual(parseQuery("关银屏"), { keyword: "关银屏", showAll: false });
